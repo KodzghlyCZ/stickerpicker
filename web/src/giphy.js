@@ -111,22 +111,22 @@ export class GiphySearchTab extends Component {
 
 		// Handling the URL generation
 		const gifUrl = isGiphy
-		? GIPHY_MXC_PREFIX + gif.id
-		: TENOR_MXC_PREFIX + gif.id;
+		? GIPHY_MXC_PREFIX + gif.id // Giphy uses the same URL logic
+		: TENOR_MXC_PREFIX + gif.id; // Tenor uses the same URL logic
 
 		// Handling GIF metadata (height, width, size, mimetype)
 		let gifInfo = null;
 
 		if (isGiphy) {
-			// Giphy: Fetch dimensions and size from the `original` image object
+			// Giphy: Fetch dimensions and size from the `original` GIF image object (not WebP)
 			gifInfo = {
 				"h": +gif.images.original.height,
 				"w": +gif.images.original.width,
 				"size": +gif.images.original.size,
-				"mimetype": "image/webp", // Use webp if available
+				"mimetype": "image/gif", // Ensure we send GIF mimetype
 			};
 		} else if (gif.media_formats) {
-			// Tenor: Select the best available GIF format based on media_formats
+			// Tenor: Prioritize the GIF format over WebP, choose from available formats
 			const preferredFormat = gif.media_formats.gif || gif.media_formats.mediumgif || gif.media_formats.tinygif;
 
 			if (preferredFormat) {
@@ -134,7 +134,7 @@ export class GiphySearchTab extends Component {
 					"h": +preferredFormat.dims[1], // Height
 					"w": +preferredFormat.dims[0], // Width
 					"size": +preferredFormat.size,  // Size
-					"mimetype": "image/webp",       // Tenor typically provides WebP formats
+					"mimetype": "image/gif",        // Set to GIF mimetype
 				};
 			}
 		}
@@ -145,16 +145,17 @@ export class GiphySearchTab extends Component {
 			return;
 		}
 
-		// Send the sticker using the widgetAPI
+		// Send the sticker using the widgetAPI (now with GIF format)
 		widgetAPI.sendSticker({
 			"body": gif.title || gif.content_description || 'GIF', // Fallback to description or generic title
 			"info": gifInfo,
 			"msgtype": "m.image",
 			"url": gifUrl,
 			"id": gif.id,
-			"filename": gif.id + ".webp", // Use WebP filename
+			"filename": gif.id + ".gif", // Ensure we're sending a .gif file
 		});
 	}
+
 
 	render() {
 		return html`
