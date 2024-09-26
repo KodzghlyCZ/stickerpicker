@@ -52,7 +52,7 @@ export class GiphySearchTab extends Component {
 			.catch(() => []);
 
 			// Fetch GIFs from Tenor
-			const tenorPromise = fetch(`https://g.tenor.com/v1/search?q=${this.state.searchTerm}&key=${TENOR_API_KEY}&limit=8`)
+			const tenorPromise = fetch(`https://tenor.googleapis.com/v2/search?q=${this.state.searchTerm}&key=${TENOR_API_KEY}&limit=8`)
 			.then(resp => resp.json())
 			.then(data => data.results || [])
 			.catch(() => []);
