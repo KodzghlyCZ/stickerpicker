@@ -1,3 +1,4 @@
+import os
 import {Component, html} from "../lib/htm/preact.js";
 import * as widgetAPI from "./widget-api.js";
 import {SearchBox} from "./search-box.js";
