@@ -45,7 +45,6 @@ export class GiphySearchTab extends Component {
 		try {
 			this.setState({ loading: true });
 
-			// Fetch GIFs from Giphy
 			const giphyPromise = fetch(`https://api.giphy.com/v1/gifs/search?q=${this.state.searchTerm}&api_key=${GIPHY_API_KEY}`)
 			.then(resp => resp.json())
 			.then(data => {
@@ -57,7 +56,6 @@ export class GiphySearchTab extends Component {
 				return [];
 			});
 
-			// Fetch GIFs from Tenor
 			const tenorPromise = fetch(`https://tenor.googleapis.com/v2/search?q=${this.state.searchTerm}&key=${TENOR_API_KEY}&limit=8`)
 			.then(resp => resp.json())
 			.then(data => {
@@ -69,12 +67,10 @@ export class GiphySearchTab extends Component {
 				return [];
 			});
 
-			// Wait for both requests to complete
 			const [giphyResults, tenorResults] = await Promise.all([giphyPromise, tenorPromise]);
 
 			console.log("Combined Results - Giphy and Tenor:", [...giphyResults, ...tenorResults]); // Log combined results
 
-			// Combine results into one list
 			const combinedResults = [
 				...giphyResults.map(gif => ({ ...gif, source: "giphy" })),
 				...tenorResults.map(gif => ({ ...gif, source: "tenor" }))
@@ -89,7 +85,7 @@ export class GiphySearchTab extends Component {
 			this.setState({ loading: false });
 		} catch (error) {
 			this.setState({ error, loading: false });
-			console.error("Error in makeGifSearchRequest:", error); // Log general errors
+			console.error("Error in makeGifSearchRequest:", error);
 		}
 	}
 
@@ -123,7 +119,7 @@ export class GiphySearchTab extends Component {
 			"size": +gif.images.original.size,
 			"mimetype": "image/webp",
 		}
-		: gif.media && gif.media[0] && gif.media[0].nanogif // Check if media exists and has a gif object
+		: gif.media && gif.media[0] && gif.media[0].nanogif
 		? {
 			"h": +gif.media[0].nanogif.dims[1],
 			"w": +gif.media[0].nanogif.dims[0],
@@ -134,7 +130,7 @@ export class GiphySearchTab extends Component {
 
 		if (!gifInfo) {
 			console.error("Invalid GIF format", gif); // Log invalid gif structure
-			return; // Skip sending if GIF info is missing
+			return;
 		}
 
 		widgetAPI.sendSticker({
@@ -159,16 +155,19 @@ export class GiphySearchTab extends Component {
 		${this.state.gifs.map((gif) => {
 			const gifUrl = gif.source === "giphy"
 			? gif.images.fixed_height.url
-			: gif.media && gif.media[0] && gif.media[0].nanogif // Ensure media and gif are present
+			: gif.media && gif.media[0] && gif.media[0].nanogif
 			? gif.media[0].nanogif.url
 			: null;
 
 			if (!gifUrl) {
-				return null; // Skip rendering if gif URL is missing
+				console.warn("Skipping GIF due to missing URL:", gif); // Log missing URLs
+				return null;
 			}
 
+			console.log("Rendering GIF:", gif); // Log each GIF being rendered
+
 			return html`
-			<div class="sticker" onClick=${() => this.handleGifClick(gif)} data-gif-id=${gif.id}>
+			<div class="sticker" key=${gif.id} onClick=${() => this.handleGifClick(gif)} data-gif-id=${gif.id}>
 			<img src=${gifUrl} alt=${gif.title} class="visible" />
 			</div>
 			`;
