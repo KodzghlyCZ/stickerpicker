@@ -155,14 +155,18 @@ export class GiphySearchTab extends Component {
 		${this.state.gifs.map((gif) => {
 			const gifUrl = gif.source === "giphy"
 			? gif.images.fixed_height.url
-			: gif.media && gif.media[0] && gif.media[0].nanogif
-			? gif.media[0].nanogif.url
+			: gif.media_formats && gif.media_formats.gif && gif.media_formats.gif.url
+			? gif.media_formats.gif.url // Prefer the regular gif format
+			: gif.media_formats.nanogif && gif.media_formats.nanogif.url
+			? gif.media_formats.nanogif.url // Fallback to nanogif if regular gif is unavailable
 			: null;
 
 			if (!gifUrl) {
 				console.warn("Skipping GIF due to missing URL:", gif); // Log missing URLs
 				return null;
 			}
+
+
 
 			console.log("Rendering GIF:", gif); // Log each GIF being rendered
 
