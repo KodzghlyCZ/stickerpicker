@@ -4,26 +4,18 @@ import { SearchBox } from "./search-box.js";
 
 const GIPHY_SEARCH_DEBOUNCE = 1000;
 let GIPHY_API_KEY = "HQku8974Uq5MZn3MZns46kXn2R4GDm75";
-let GIPHY_MXC_PREFIX = "mxc://giphy.mau.dev/";
 let TENOR_API_KEY = "AIzaSyA2q2dmfESwk9qzOkP8Fz1_rK0qfFyyIv4"; // Your Tenor API key here
-let TENOR_MXC_PREFIX = "mxc://tenor.mau.dev/";
 
 export function giphyIsEnabled() {
 	return GIPHY_API_KEY !== "";
 }
 
-export function setGiphyAPIKey(apiKey, mxcPrefix) {
+export function setGiphyAPIKey(apiKey) {
 	GIPHY_API_KEY = apiKey;
-	if (mxcPrefix) {
-		GIPHY_MXC_PREFIX = mxcPrefix;
-	}
 }
 
-export function setTenorAPIKey(apiKey, mxcPrefix) {
+export function setTenorAPIKey(apiKey) {
 	TENOR_API_KEY = apiKey;
-	if (mxcPrefix) {
-		TENOR_MXC_PREFIX = mxcPrefix;
-	}
 }
 
 export class GiphySearchTab extends Component {
@@ -111,16 +103,17 @@ export class GiphySearchTab extends Component {
 
 		// Handling the URL generation
 		const gifUrl = isGiphy
-		? GIPHY_MXC_PREFIX + gif.id // Giphy uses the same URL logic
-		: TENOR_MXC_PREFIX + gif.id; // Tenor uses the same URL logic
-
-
+		? gif.images.original.url // Use original Giphy URL
+		: gif.media_formats && gif.media_formats.gif
+		? gif.media_formats.gif.url // Prefer the regular gif format for Tenor
+		: gif.media_formats.nanogif && gif.media_formats.nanogif.url
+		? gif.media_formats.nanogif.url // Fallback to nanogif if regular gif is unavailable
+		: null;
 
 		// Handling GIF metadata (height, width, size, mimetype)
 		let gifInfo = null;
 
 		if (isGiphy) {
-			// Giphy: Fetch dimensions and size from the `original` GIF image object (not WebP)
 			gifInfo = {
 				"h": +gif.images.original.height,
 				"w": +gif.images.original.width,
@@ -128,15 +121,14 @@ export class GiphySearchTab extends Component {
 				"mimetype": "image/gif", // Ensure we send GIF mimetype
 			};
 		} else if (gif.media_formats) {
-			// Tenor: Prioritize the GIF format over WebP, choose from available formats
 			const preferredFormat = gif.media_formats.gif || gif.media_formats.mediumgif || gif.media_formats.tinygif;
 
 			if (preferredFormat) {
 				gifInfo = {
-					"h": +preferredFormat.dims[1], // Height
-					"w": +preferredFormat.dims[0], // Width
-					"size": +preferredFormat.size,  // Size
-					"mimetype": "image/gif",        // Set to GIF mimetype
+					"h": +preferredFormat.dims[1],
+					"w": +preferredFormat.dims[0],
+					"size": +preferredFormat.size,
+					"mimetype": "image/gif", // Set to GIF mimetype
 				};
 			}
 		}
@@ -145,23 +137,21 @@ export class GiphySearchTab extends Component {
 		console.log("GIF URL:", gifUrl);
 		console.log("GIF Info:", gifInfo);
 
-		// If gifInfo is null, log an error and return early
-		if (!gifInfo) {
+		if (!gifInfo || !gifUrl) {
 			console.error("Invalid GIF format", gif); // Log invalid gif structure
 			return;
 		}
 
-		// Send the sticker using the widgetAPI (now with GIF format)
+		// Send the sticker using the widgetAPI
 		widgetAPI.sendSticker({
-			"body": gif.title || gif.content_description || 'GIF', // Fallback to description or generic title
+			"body": gif.title || gif.content_description || 'GIF',
 			"info": gifInfo,
 			"msgtype": "m.image",
-			"url": gifUrl,
+			"url": gifUrl, // Use the embed URL here
 			"id": gif.id,
 			"filename": gif.id + ".gif", // Ensure we're sending a .gif file
 		});
 	}
-
 
 	render() {
 		return html`
@@ -185,8 +175,6 @@ export class GiphySearchTab extends Component {
 				console.warn("Skipping GIF due to missing URL:", gif); // Log missing URLs
 				return null;
 			}
-
-
 
 			console.log("Rendering GIF:", gif); // Log each GIF being rendered
 
