@@ -1,11 +1,7 @@
-import {Component, html} from "../lib/htm/preact.js";
-import * as widgetAPI from "./widget-api.js";
-import {SearchBox} from "./search-box.js";
-
 const GIPHY_SEARCH_DEBOUNCE = 1000;
 let GIPHY_API_KEY = "HQku8974Uq5MZn3MZns46kXn2R4GDm75";
 let GIPHY_MXC_PREFIX = "mxc://giphy.mau.dev/";
-let TENOR_API_KEY = "AIzaSyA2q2dmfESwk9qzOkP8Fz1_rK0qfFyyIv4";
+let TENOR_API_KEY = "AIzaSyA2q2dmfESwk9qzOkP8Fz1_rK0qfFyyIv4"; // Your Tenor API key here
 let TENOR_MXC_PREFIX = "mxc://tenor.mau.dev/";
 
 export function giphyIsEnabled() {
@@ -52,7 +48,7 @@ export class GiphySearchTab extends Component {
 			.catch(() => []);
 
 			// Fetch GIFs from Tenor
-			const tenorPromise = fetch(`https://tenor.googleapis.com/v2/search?q=${this.state.searchTerm}&key=${TENOR_API_KEY}`)
+			const tenorPromise = fetch(`https://g.tenor.com/v1/search?q=${this.state.searchTerm}&key=${TENOR_API_KEY}&limit=8`)
 			.then(resp => resp.json())
 			.then(data => data.results || [])
 			.catch(() => []);
@@ -108,12 +104,19 @@ export class GiphySearchTab extends Component {
 			"size": +gif.images.original.size,
 			"mimetype": "image/webp",
 		}
-		: {
-			"h": +gif.media[0].gif.dims[1],
-			"w": +gif.media[0].gif.dims[0],
-			"size": +gif.media[0].gif.size,
+		: gif.media && gif.media[0] && gif.media[0].nanogif // Check if media exists and has a gif object
+		? {
+			"h": +gif.media[0].nanogif.dims[1],
+			"w": +gif.media[0].nanogif.dims[0],
+			"size": +gif.media[0].nanogif.size,
 			"mimetype": "image/webp",
-		};
+		}
+		: null;
+
+		if (!gifInfo) {
+			console.error("Invalid GIF format", gif);
+			return; // Skip sending if GIF info is missing
+		}
 
 		widgetAPI.sendSticker({
 			"body": gif.title,
@@ -134,18 +137,30 @@ export class GiphySearchTab extends Component {
 		${this.state.error}
 		</div>
 		<div class="sticker-list">
-		${this.state.gifs.map((gif) => html`
+		${this.state.gifs.map((gif) => {
+			const gifUrl = gif.source === "giphy"
+			? gif.images.fixed_height.url
+			: gif.media && gif.media[0] && gif.media[0].nanogif // Ensure media and gif are present
+			? gif.media[0].nanogif.url
+			: null;
+
+			if (!gifUrl) {
+				return null; // Skip rendering if gif URL is missing
+			}
+
+			return html`
 			<div class="sticker" onClick=${() => this.handleGifClick(gif)} data-gif-id=${gif.id}>
-			<img src=${gif.source === "giphy" ? gif.images.fixed_height.url : gif.media[0].gif.url} alt=${gif.title} class="visible" />
-			</div>
-			`)}
-			</div>
-			<div class="footer powered-by">
-			<img src="./res/powered-by-giphy.png" alt="Powered by GIPHY"/>
-			<img src="./res/powered-by-tenor.png" alt="Powered by Tenor"/>
-			</div>
-			</section>
+			<img src=${gifUrl} alt=${gif.title} class="visible" />
 			</div>
 			`;
+		})}
+		</div>
+		<div class="footer powered-by">
+		<img src="./res/powered-by-giphy.png" alt="Powered by GIPHY"/>
+		<img src="./res/powered-by-tenor.png" alt="Powered by Tenor"/>
+		</div>
+		</section>
+		</div>
+		`;
 	}
 }
