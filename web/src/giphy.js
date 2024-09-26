@@ -1,12 +1,11 @@
-import os
 import {Component, html} from "../lib/htm/preact.js";
 import * as widgetAPI from "./widget-api.js";
 import {SearchBox} from "./search-box.js";
 
 const GIPHY_SEARCH_DEBOUNCE = 1000;
-let GIPHY_API_KEY = process.env.GIPHY_API_KEY;
+let GIPHY_API_KEY = "HQku8974Uq5MZn3MZns46kXn2R4GDm75";
 let GIPHY_MXC_PREFIX = "mxc://giphy.mau.dev/";
-let TENOR_API_KEY =  process.env.TENOR_API_KEY; // Your Tenor API key here
+let TENOR_API_KEY = "AIzaSyA2q2dmfESwk9qzOkP8Fz1_rK0qfFyyIv4"; // Your Tenor API key here
 let TENOR_MXC_PREFIX = "mxc://tenor.mau.dev/";
 
 export function giphyIsEnabled() {
