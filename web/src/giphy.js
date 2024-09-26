@@ -1,6 +1,6 @@
-import {Component, html} from "../lib/htm/preact.js";
+import { Component, html } from "../lib/htm/preact.js";
 import * as widgetAPI from "./widget-api.js";
-import {SearchBox} from "./search-box.js";
+import { SearchBox } from "./search-box.js";
 
 const GIPHY_SEARCH_DEBOUNCE = 1000;
 let GIPHY_API_KEY = "HQku8974Uq5MZn3MZns46kXn2R4GDm75";
@@ -48,17 +48,31 @@ export class GiphySearchTab extends Component {
 			// Fetch GIFs from Giphy
 			const giphyPromise = fetch(`https://api.giphy.com/v1/gifs/search?q=${this.state.searchTerm}&api_key=${GIPHY_API_KEY}`)
 			.then(resp => resp.json())
-			.then(data => data.data || [])
-			.catch(() => []);
+			.then(data => {
+				console.log("Giphy Results:", data.data); // Log Giphy results
+				return data.data || [];
+			})
+			.catch(error => {
+				console.error("Error fetching Giphy results:", error);
+				return [];
+			});
 
 			// Fetch GIFs from Tenor
 			const tenorPromise = fetch(`https://tenor.googleapis.com/v2/search?q=${this.state.searchTerm}&key=${TENOR_API_KEY}&limit=8`)
 			.then(resp => resp.json())
-			.then(data => data.results || [])
-			.catch(() => []);
+			.then(data => {
+				console.log("Tenor Results:", data.results); // Log Tenor results
+				return data.results || [];
+			})
+			.catch(error => {
+				console.error("Error fetching Tenor results:", error);
+				return [];
+			});
 
 			// Wait for both requests to complete
 			const [giphyResults, tenorResults] = await Promise.all([giphyPromise, tenorPromise]);
+
+			console.log("Combined Results - Giphy and Tenor:", [...giphyResults, ...tenorResults]); // Log combined results
 
 			// Combine results into one list
 			const combinedResults = [
@@ -75,6 +89,7 @@ export class GiphySearchTab extends Component {
 			this.setState({ loading: false });
 		} catch (error) {
 			this.setState({ error, loading: false });
+			console.error("Error in makeGifSearchRequest:", error); // Log general errors
 		}
 	}
 
@@ -118,7 +133,7 @@ export class GiphySearchTab extends Component {
 		: null;
 
 		if (!gifInfo) {
-			console.error("Invalid GIF format", gif);
+			console.error("Invalid GIF format", gif); // Log invalid gif structure
 			return; // Skip sending if GIF info is missing
 		}
 
