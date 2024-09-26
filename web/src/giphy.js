@@ -108,38 +108,51 @@ export class GiphySearchTab extends Component {
 
 	handleGifClick(gif) {
 		const isGiphy = gif.source === "giphy";
+
+		// Handling the URL generation
 		const gifUrl = isGiphy
 		? GIPHY_MXC_PREFIX + gif.id
 		: TENOR_MXC_PREFIX + gif.id;
 
-		const gifInfo = isGiphy
-		? {
-			"h": +gif.images.original.height,
-			"w": +gif.images.original.width,
-			"size": +gif.images.original.size,
-			"mimetype": "image/webp",
-		}
-		: gif.media && gif.media[0] && gif.media[0].nanogif
-		? {
-			"h": +gif.media[0].nanogif.dims[1],
-			"w": +gif.media[0].nanogif.dims[0],
-			"size": +gif.media[0].nanogif.size,
-			"mimetype": "image/webp",
-		}
-		: null;
+		// Handling GIF metadata (height, width, size, mimetype)
+		let gifInfo = null;
 
+		if (isGiphy) {
+			// Giphy: Fetch dimensions and size from the `original` image object
+			gifInfo = {
+				"h": +gif.images.original.height,
+				"w": +gif.images.original.width,
+				"size": +gif.images.original.size,
+				"mimetype": "image/webp", // Use webp if available
+			};
+		} else if (gif.media_formats) {
+			// Tenor: Select the best available GIF format based on media_formats
+			const preferredFormat = gif.media_formats.gif || gif.media_formats.mediumgif || gif.media_formats.tinygif;
+
+			if (preferredFormat) {
+				gifInfo = {
+					"h": +preferredFormat.dims[1], // Height
+					"w": +preferredFormat.dims[0], // Width
+					"size": +preferredFormat.size,  // Size
+					"mimetype": "image/webp",       // Tenor typically provides WebP formats
+				};
+			}
+		}
+
+		// If gifInfo is null, log an error and return early
 		if (!gifInfo) {
 			console.error("Invalid GIF format", gif); // Log invalid gif structure
 			return;
 		}
 
+		// Send the sticker using the widgetAPI
 		widgetAPI.sendSticker({
-			"body": gif.title,
+			"body": gif.title || gif.content_description || 'GIF', // Fallback to description or generic title
 			"info": gifInfo,
 			"msgtype": "m.image",
 			"url": gifUrl,
 			"id": gif.id,
-			"filename": gif.id + ".webp",
+			"filename": gif.id + ".webp", // Use WebP filename
 		});
 	}
 
