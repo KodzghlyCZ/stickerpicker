@@ -114,6 +114,8 @@ export class GiphySearchTab extends Component {
 		? GIPHY_MXC_PREFIX + gif.id // Giphy uses the same URL logic
 		: TENOR_MXC_PREFIX + gif.id; // Tenor uses the same URL logic
 
+
+
 		// Handling GIF metadata (height, width, size, mimetype)
 		let gifInfo = null;
 
@@ -138,6 +140,10 @@ export class GiphySearchTab extends Component {
 				};
 			}
 		}
+
+		console.log("GIF clicked:", gif);
+		console.log("GIF URL:", gifUrl);
+		console.log("GIF Info:", gifInfo);
 
 		// If gifInfo is null, log an error and return early
 		if (!gifInfo) {
